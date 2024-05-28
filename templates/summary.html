@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Summary Statistics</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body class="bg-gray-900 text-white">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-4xl font-bold mb-6 text-center text-indigo-400">Summary Statistics</h1>
+        {% for column, stats in summary_stats.items() %}
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold mb-4">{{ column }}</h2>
+            <ul class="list-disc list-inside mb-4">
+                <li>Mean: {{ stats['mean'] }}</li>
+                <li>Median: {{ stats['50%'] }}</li>
+                <li>Mode: {{ stats['mode'] }}</li>
+                <li>Standard Deviation: {{ stats['std'] }}</li>
+                <li>Variance: {{ stats['std'] ** 2 }}</li>
+                <li>1st Quartile (Q1): {{ stats['q1'] }}</li>
+                <li>3rd Quartile (Q3): {{ stats['q3'] }}</li>
+                <li>Minimum: {{ stats['min'] }}</li>
+                <li>Maximum: {{ stats['max'] }}</li>
+            </ul>
+            <div class="flex flex-col md:flex-row md:justify-around">
+                <div id="box-{{ column }}" class="mb-4 md:mb-0 md:w-1/2"></div>
+                <div id="bar-{{ column }}" class="md:w-1/2"></div>
+            </div>
+        </div>
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                var boxData{{ loop.index }} = {{ plots[column]['box'] | safe }};
+                Plotly.newPlot('box-{{ column }}', boxData{{ loop.index }}.data, boxData{{ loop.index }}.layout);
+
+                var barData{{ loop.index }} = {{ plots[column]['bar'] | safe }};
+                Plotly.newPlot('bar-{{ column }}', barData{{ loop.index }}.data, barData{{ loop.index }}.layout);
+            });
+        </script>
+        {% endfor %}
+        <div class="text-center">
+            <form action="/choose_test" method="post" class="bg-gray-800 shadow-lg rounded-lg p-6 mb-4">
+                <div class="mb-4">
+                    <label class="block text-gray-300 text-sm font-bold mb-2" for="test_type">Select Test</label>
+                    <select class="block appearance-none w-full bg-gray-700 border border-gray-600 hover:border-gray-500 px-4 py-2 pr-8 rounded leading-tight focus:outline-none focus:shadow-outline text-white" name="test_type" id="test_type" onchange="updateForm()">
+                        <option value="1">One-Sample z-Test</option>
+                        <option value="2">Two-Sample z-Test</option>
+                        <option value="3">z-Test for Proportions</option>
+                        <option value="4">Paired z-Test</option>
+                        <option value="5">Mann-Whitney U Test</option>
+                        <option value="6">Fisher's Exact Test</option>
+                        <option value="7">Fisher F-Test</option>
+                        <option value="8">Kendall Tau Test</option>
+                        <option value="9">Cochran's Q Test</option>
+                        <option value="10">Cohen's Kappa Test</option>
+                        <option value="11">Fleiss' Kappa Test</option>
+                    </select>
+                </div>
+                <div id="columns_div" class="mb-4"></div>
+                <div class="flex items-center justify-between">
+                    <button class="w-full bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-200" type="submit">Submit</button>
+                </div>
+            </form>
+            <a class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-200" href="/">Back to Home</a>
+        </div>
+    </div>
+    <script>
+        function updateForm() {
+            const testType = document.getElementById('test_type').value;
+            const columnsDiv = document.getElementById('columns_div');
+            columnsDiv.innerHTML = '';
+            
+            if (testType === '1') {
+                columnsDiv.innerHTML += '<label class="block text-gray-300 text-sm font-bold mb-2" for="column1">Column 1</label>';
+                columnsDiv.innerHTML += '<input class="shadow appearance-none border rounded w-full py-2 px-3 bg-gray-700 text-white leading-tight focus:outline-none focus:shadow-outline" type="text" name="column1" id="column1" required>';
+                columnsDiv.innerHTML += '<label class="block text-gray-300 text-sm font-bold mb-2" for="pop_mean">Population Mean</label>';
+                columnsDiv.innerHTML += '<input class="shadow appearance-none border rounded w-full py-2 px-3 bg-gray-700 text-white leading-tight focus:outline-none focus:shadow-outline" type="text" name="pop_mean" id="pop_mean" required>';
+            } else if (testType === '2' || testType === '4' || testType === '5' || testType === '7' || testType === '8' || testType === '10') {
+                columnsDiv.innerHTML += '<label class="block text-gray-300 text-sm font-bold mb-2" for="column1">Column 1</label>';
+                columnsDiv.innerHTML += '<input class="shadow appearance-none border rounded w-full py-2 px-3 bg-gray-700 text-white leading-tight focus:outline-none focus:shadow-outline" type="text" name="column1" id="column1" required>';
+                columnsDiv.innerHTML += '<label class="block text-gray-300 text-sm font-bold mb-2" for="column2">Column 2</label>';
+                columnsDiv.innerHTML += '<input class="shadow appearance-none border rounded w-full py-2 px-3 bg-gray-700 text-white leading-tight focus:outline-none focus:shadow-outline" type="text" name="column2" id="column2" required>';
+            } else if (testType === '3') {
+                columnsDiv.innerHTML += '<label class="block text-gray-300 text-sm font-bold mb-2" for="column1">Column 1 (Proportions)</label>';
+                columnsDiv.innerHTML += '<input class="shadow appearance-none border rounded w-full py-2 px-3 bg-gray-700 text-white leading-tight focus:outline-none focus:shadow-outline" type="text" name="column1" id="column1" required>';
+                columnsDiv.innerHTML += '<label class="block text-gray-300 text-sm font-bold mb-2" for="column2">Column 2 (Proportions)</label>';
+                columnsDiv.innerHTML += '<input class="shadow appearance-none border rounded w-full py-2 px-3 bg-gray-700 text-white leading-tight focus:outline-none focus:shadow-outline" type="text" name="column2" id="column2" required>';
+            } else if (testType === '9' || testType === '11') {
+                columnsDiv.innerHTML += '<label class="block text-gray-300 text-sm font-bold mb-2" for="columns">Columns (Separate with commas)</label>';
+                columnsDiv.innerHTML += '<input class="shadow appearance-none border rounded w-full py-2 px-3 bg-gray-700 text-white leading-tight focus:outline-none focus:shadow-outline" type="text" name="columns" id="columns" required>';
+            } else if (testType === '6') {
+                columnsDiv.innerHTML += '<label class="block text-gray-300 text-sm font-bold mb-2" for="column1">Column 1 (Categorical)</label>';
+                columnsDiv.innerHTML += '<input class="shadow appearance-none border rounded w-full py-2 px-3 bg-gray-700 text-white leading-tight focus:outline-none focus:shadow-outline" type="text" name="column1" id="column1" required>';
+                columnsDiv.innerHTML += '<label class="block text-gray-300 text-sm font-bold mb-2" for="column2">Column 2 (Categorical)</label>';
+                columnsDiv.innerHTML += '<input class="shadow appearance-none border rounded w-full py-2 px-3 bg-gray-700 text-white leading-tight focus:outline-none focus:shadow-outline" type="text" name="column2" id="column2" required>';
+            }
+        }
+    </script>
+</body>
+</html>
